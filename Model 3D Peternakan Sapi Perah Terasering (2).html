@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Model 3D Peternakan Sapi Perah Terasering</title>
+<style>
+:root{--bg:#dfe8d8;--panel:rgba(255,255,255,.92);--ink:#1d2a1c;--btn:#2f5d34;--btnt:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b241a;--panel:rgba(30,40,30,.92);--ink:#e6efe2;--btn:#6fa874;--btnt:#10200f}}
+html,body{height:100%;margin:0;background:var(--bg);font-family:system-ui,Arial,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0}
+#ui{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;flex-wrap:wrap;gap:6px;z-index:5}
+button{background:var(--btn);color:var(--btnt);border:0;border-radius:8px;padding:7px 10px;font-size:13px;cursor:pointer}
+button.off{opacity:.55}
+.lb{position:fixed;left:0;top:0;pointer-events:none;background:rgba(20,25,20,.78);color:#fff;font-size:11px;padding:3px 7px;border-radius:6px;white-space:nowrap;transform:translate(-50%,-100%);z-index:3}
+body.topv .lb{font-size:10px;padding:2px 5px}
+#info{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);background:var(--panel);color:var(--ink);padding:6px 10px;border-radius:8px;font-size:12px;max-width:90%}
+</style></head><body>
+<div id="c"></div>
+<div id="ui"></div>
+<div id="info">Seret: putar · Klik kanan/dua jari: geser · Roda/cubit: zoom · 1 unit = 1 meter</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const T=THREE,W=innerWidth,H=innerHeight;let OX=0;const ox=p=>p&&p!==roofs?0:OX;let MZ=0,MC=0,SH=0;const mz=(p,z)=>((MZ&&(!p||p===roofs))?2*MC-z:z)+((!p||p===roofs)?SH:0);
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(W,H);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;renderer.localClippingEnabled=false;
+document.getElementById('c').appendChild(renderer.domElement);
+const scene=new T.Scene();scene.background=new T.Color(0xbcd4e6);scene.fog=new T.Fog(0xbcd4e6,90,230);
+const cam=new T.PerspectiveCamera(45,W/H,.1,500);
+const ctl=new T.OrbitControls(cam,renderer.domElement);ctl.enableDamping=true;
+scene.add(new T.HemisphereLight(0xffffff,0x5a6a45,.75));
+const sun=new T.DirectionalLight(0xfff3e0,.8);sun.position.set(30,50,-20);sun.castShadow=true;
+sun.shadow.mapSize.set(4096,4096);Object.assign(sun.shadow.camera,{left:-110,right:110,top:90,bottom:-90,far:260});scene.add(sun);
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const mc={};const mat=(c,o={})=>{const k=c+JSON.stringify(o);return mc[k]||(mc[k]=new T.MeshStandardMaterial(Object.assign({color:c,roughness:.9,side:T.DoubleSide},o)))};
+function box(w,h,d,c,x,y,z,p,o){const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat(c,o));m.position.set(x+ox(p),y,mz(p,z));m.castShadow=m.receiveShadow=true;(p||scene).add(m);return m}
+function cyl(r,h,c,x,y,z,p,seg=10){const m=new T.Mesh(new T.CylinderGeometry(r,r,h,seg),mat(c));m.position.set(x+ox(p),y,mz(p,z));m.castShadow=true;(p||scene).add(m);return m}
+const roofs=new T.Group();scene.add(roofs);const veg=new T.Group();scene.add(veg);const sy=z=>z<5?0:z<25?-.12*(z-5):-2.4;
+function between(p1,p2,w,t,c,p,o){const m=new T.Mesh(new T.BoxGeometry(w,t,p1.distanceTo(p2)),mat(c,o));m.position.copy(p1).add(p2).multiplyScalar(.5);m.position.x+=ox(p);m.position.z=mz(p,m.position.z);m.lookAt(p2.x+ox(p),p2.y,mz(p,p2.z));(p||scene).add(m);return m}
+
+// ground & terraces
+const g=new T.Mesh(new T.PlaneGeometry(400,400),mat(0x6b7a3a));g.rotation.x=-Math.PI/2;g.position.y=-4;g.receiveShadow=true;scene.add(g);
+// hill behind A
+box(42.1,6,14,0x5d7a35,18.95,-1,-12);   // bukit, dipotong untuk jalan menanjak (x -6,2..-2,1)
+for(let k=0;k<3;k++){const y=-1.2*k,c=10*k;
+ if(k){box(15,4+y,10,0x7a5a3c,6.5,(y-4)/2,c);box(24,4+y,10,0x7a5a3c,37,(y-4)/2,c)}else box(28.5,4+y,10,0x7a5a3c,13.25,(y-4)/2,c);              // earth terrace
+ box(k?14:20,.15,10,0x9a9a94,k?7:10,y-.07,c);                // pad
+ if(k==1)box(15,1.3,.4,0x8d877a,6.5,-1.8,c+5.1);            // dinding penahan B-C (tembok A dihapus)
+ if(k==1)for(let i=0;i<30;i++)box(.5+rnd()*.5,.25,.1,rnd()>.5?0x6f6a5e:0x9c968a,.5+rnd()*13,y-.15-rnd()*1.0,c+5.33,null);
+  // moss
+}
+// lereng tanah A -> B (tanpa tembok)
+function wedge(x1,w){const sh=new T.Shape();sh.moveTo(5,0);sh.lineTo(6.4,-1.2);sh.lineTo(6.4,-1.3);sh.lineTo(5,-1.3);sh.closePath();
+ const gm=new T.ExtrudeGeometry(sh,{depth:w,bevelEnabled:false});gm.rotateY(-Math.PI/2);const m=new T.Mesh(gm,mat(0x7a5a3c));m.position.x=x1;m.castShadow=m.receiveShadow=true;scene.add(m)}
+wedge(14,15);wedge(27.5,2.5);
+// jalan lurus sepanjang x=-4: akses (menanjak) -> halaman depan kandang -> turun di tepi kebun rumput gajah
+function gravelRoad(a,b,rf,N,np){const L=a.distanceTo(b),grp=new T.Group();
+ const gr=new T.Mesh(new T.BoxGeometry(10,6,L),mat(0x6b7a3a));gr.position.y=-3;grp.add(gr);
+ const rd=new T.Mesh(new T.BoxGeometry(3.4,.12,L),mat(0x8b7556));rd.position.set(3,.04,0);rd.receiveShadow=true;grp.add(rd);
+ for(let i=0;i<np;i++){const p=new T.Mesh(new T.BoxGeometry(.5+rf()*1.1,.01,1+rf()*3),mat(i%2?0x7a6548:0x9a8462));p.position.set(3+(rf()-.5)*2.6,.108,(rf()-.5)*(L-2));p.receiveShadow=true;grp.add(p)}
+ {const gm=new T.DodecahedronGeometry(1,0),im=new T.InstancedMesh(gm,new T.MeshStandardMaterial({roughness:.95,flatShading:true}),N),d=new T.Object3D(),cols=[0x9c968a,0x7d786d,0xb5ae9e,0x6f6a5e,0xa8997c],c=new T.Color();
+  for(let i=0;i<N;i++){const r=.04+rf()*.07;d.position.set(3+(rf()-.5)*3.3,.1+r*.4,(rf()-.5)*(L-1));d.rotation.set(rf()*6,rf()*6,rf()*6);d.scale.set(r*(1+rf()*.5),r*.7,r);d.updateMatrix();im.setMatrixAt(i,d.matrix);im.setColorAt(i,c.setHex(cols[i%5]))}
+  im.castShadow=true;grp.add(im)}
+ grp.position.copy(a).add(b).multiplyScalar(.5);grp.lookAt(b);scene.add(grp)}
+{let s=23;const lr=()=>(s=(s*16807)%2147483647)/2147483647;
+ gravelRoad(new T.Vector3(-7,-3.9,-45),new T.Vector3(-7,.7,-8),lr,150,10);            // menanjak dari bawah (belakang)
+ gravelRoad(new T.Vector3(-7,.7,-8),new T.Vector3(-7,.7,0),lr,30,3);                   // puncak tinggi di sisi Kandang A
+ gravelRoad(new T.Vector3(-7,.7,0),new T.Vector3(-7,-2.45,25.3),rnd,240,14);           // menurun ke halaman depan
+ gravelRoad(new T.Vector3(-7,-2.4,33),new T.Vector3(-7,-3.85,45.3),lr,90,6);            // turun di tepi kebun
+ gravelRoad(new T.Vector3(-7,-3.85,45.3),new T.Vector3(-7,-3.85,64),lr,110,8);}         // lanjut datar
+// drains
+for(let k=0;k<3;k++){box(k?14:25.1,.06,.3,0x9a7a2e,k?7:12.05,-1.2*k+.12,10*k+(k==1?-2.75:2.75),null,{roughness:.2});}
+{const X=24.6,Wd=(a,b)=>between(new T.Vector3(X,a[0],a[1]),new T.Vector3(X,b[0],b[1]),.45,.06,0x9a7a2e,null,{roughness:.2});
+box(25,2.8,10,0x7a5a3c,36.5,-2.6,0);box(20,.15,10,0x9a9a94,36,-1.27,10);box(20,.15,10,0x9a9a94,36,-2.47,20);box(20,2,.4,0x8d877a,36,-1.4,15.1);box(.4,1.25,10,0x8d877a,27.55,-.6,0);
+box(16.4,.06,.3,0x9a7a2e,32.8,-1.08,12.75);box(16.4,.06,.3,0x9a7a2e,32.8,-2.28,22.75);
+Wd([.08,2.75],[.08,5]);Wd([.07,5],[-2.33,25]);Wd([-2.33,25],[-2.33,33]);}
+
+
+// lereng tengah: tanah turun tanpa tembok + atap asbes
+{const sh=new T.Shape();sh.moveTo(5,0);sh.lineTo(25,-2.4);sh.lineTo(25,-4.02);sh.lineTo(5,-4.02);sh.closePath();
+const gm=new T.ExtrudeGeometry(sh,{depth:11,bevelEnabled:false});gm.rotateY(-Math.PI/2);
+const sl=new T.Mesh(gm,mat(0x7a5a3c));sl.position.x=25;sl.castShadow=sl.receiveShadow=true;scene.add(sl);
+for(let i=0;i<26;i++){const z=6+rnd()*31,x=14.4+rnd()*10.2;box(.4+rnd()*.7,.08,.3+rnd()*.5,i%3==0?0x9c968a:0x8a6a46,x,sy(z)+.03,z)}
+between(new T.Vector3(20.15,3.3,5),new T.Vector3(20.15,.54,28),10.7,.08,0xb5b2a6,roofs);
+for(let i=0;i<24;i++){const x=14.95+i*.45;between(new T.Vector3(x,3.36,5),new T.Vector3(x,.6,28),.12,.05,0xa09d90,roofs)}
+[6,10,14,18,22,26].forEach(z=>{const g=sy(z),t=3.3-.12*(z-5)-.1;[15,24.8].forEach(x=>cyl(.1,t-g,0x8a7a60,x,(t+g)/2,z,null,8));box(10.7,.1,.12,0x7a6a52,20.15,t,z,roofs)});}
+// cow
+function cow(x,y,z,stand){const G=new T.Group();const brown=rnd()<.25,dk=brown?0x6b3f26:0x151515;
+ const body=stand?1.0:.5;box(.62,.7,1.7,0xf1f1ee,0,body,0,G);
+ for(let i=0;i<3;i++)box(.64,.45+rnd()*.2,.4+rnd()*.4,dk,0,body+.05,-.5+rnd()*1,G);
+ box(.3,.32,.5,rnd()<.5?dk:0xf1f1ee,0,stand?1.05:.85,-1.05,G);
+ if(rnd()<.3){box(.04,.1,.04,0xeeeeee,-.12,stand?1.25:1.03,-1.2,G);box(.04,.1,.04,0xeeeeee,.12,stand?1.25:1.03,-1.2,G)}
+ box(.35,.22,.3,0xe8b0b0,0,body-.4,.85,G);box(.05,.6,.05,dk,0,body-.1,.95,G);
+ if(stand)[[-.2,-.65],[.2,-.65],[-.2,.65],[.2,.65]].forEach(l=>box(.12,.7,.12,0xdcdcd8,l[0],.35,l[1],G));
+ else[[-.3,-.5],[.3,-.5]].forEach(l=>box(.14,.12,.5,0xdcdcd8,l[0],.1,l[1],G));
+ cyl(.02,.3,0xbdbdbd,0,body+.2,-1.35,G,4);G.position.set(x+OX,y,mz(null,z));if(MZ)G.rotation.y=Math.PI;scene.add(G)}
+function goose(x,y,z){const G=new T.Group(),w=0xf4f4f0,o=0xe8902a;box(.28,.26,.5,w,0,.38,0,G);box(.1,.4,.1,w,0,.62,.22,G);box(.14,.12,.18,w,0,.86,.28,G);box(.08,.05,.12,o,0,.84,.4,G);box(.04,.2,.04,o,-.08,.1,0,G);box(.04,.2,.04,o,.08,.1,0,G);G.rotation.y=rnd()*6.28;G.position.set(x+OX,y,mz(null,z));scene.add(G)}
+function worker(x,y,z){const G=new T.Group();box(.4,.7,.25,0xc8201e,0,1.2,0,G);box(.15,.8,.18,0x2b3a55,-.1,.4,0,G);box(.15,.8,.18,0x2b3a55,.1,.4,0,G);
+ const h=new T.Mesh(new T.SphereGeometry(.13,10,8),mat(0xc99568));h.position.y=1.7;G.add(h);G.position.set(x+OX,y,mz(null,z));scene.add(G)}
+function milkcan(x,y,z){cyl(.22,.65,0xc7cbcf,x,y+.7,z,null,14);[-.25,.25].forEach(d=>{const w=new T.Mesh(new T.CylinderGeometry(.18,.18,.05,12),mat(0xd2411f));w.rotation.z=Math.PI/2;w.position.set(x+d+OX,y+.18,mz(null,z));scene.add(w)});box(.5,.05,.4,0x8a8a8a,x,y+.3,z)}
+const ang=Math.atan2(1.4,5.25);
+// barns
+function barn(k,y,c,ox,m){OX=ox;MZ=m?1:0;MC=c;SH=m?.5:k==2?(ox?-1.1:-.5):k==0?1.6:0;
+ box(14,.1,10,0xaaa89f,7,y+.05,MZ?c+SH:c-SH);
+ // tempat pakan keramik putih, ditinggikan (bibir ±0,84 m) agar terjangkau kepala sapi
+ box(14,.6,.8,0xb4ada0,7,y+.4,c-1.75);                                    // badan beton (atas y+.70)
+ box(14,.04,.8,0xf2f2f0,7,y+.72,c-1.75,null,{roughness:.2});              // lantai palung keramik putih
+ [-1.385,-2.115].forEach(z=>box(14.1,.14,.07,0xf2f2f0,7,y+.77,c+z,null,{roughness:.2}));   // bibir depan & belakang
+ [-.03,14.03].forEach(x=>box(.07,.14,.8,0xf2f2f0,x,y+.77,c-1.75,null,{roughness:.2}));      // sekat ujung
+ for(let i=.4;i<14;i+=.4)box(.01,.01,.8,0xcfcfcf,i,y+.745,c-1.75);                         // nat keramik
+ box(14,.03,1.3,0x9a8a58,7,y+.11,c+1.55,null,{roughness:.25,metalness:.1}); // wet milking aisle
+ box(14,.03,1.8,0x1c1c1c,7,y+.11,c,null);                       // rubber mats
+ for(let i=0;i<=12;i++)box(.12,.65,1.15,0xa6a6a0,.7+i*1.2,y+.42,c-.4);   // short stall dividers
+ for(let i=0;i<12;i++){const x=.9+i*1.2;cow(x,y+.1,c+.1,i%10<7&&!(i%3==2&&i>5)||i==0);
+  if(i%4==1){const gm=new T.Mesh(new T.CylinderGeometry(.02,.02,.5,4),mat(0x777777));gm.position.set(x+OX,y+.9,mz(null,c-.8));gm.rotation.x=MZ?-.9:.9;scene.add(gm)}}
+ // poles
+ for(let x=0;x<=14.1;x+=2.8){cyl(.11,3.62,0x8a7a60,x,y+1.81,c-3.5);cyl(.2,.85,0xb4ada0,x,y+.43,c-3.5,null,10);cyl(.1,2.25,0x8a7a60,x,y+1.125,c+3.0,null,8);cyl(.2,.85,0xb4ada0,x,y+.43,c+3.0,null,10);
+  between(new T.Vector3(x,y+3.658,c-3.5),new T.Vector3(x,y+2.313,c+3.0),.12,.12,0x7a6a52);between(new T.Vector3(x,y+2.9,c-3.5),new T.Vector3(x,y+3.44,c-2.6),.07,.07,0x8a7a60);
+  
+  if(x<14){between(new T.Vector3(x,y+3.15,c-3.5),new T.Vector3(x+2.8,y+3.6,c-3.5),.06,.06,0x8a7a60);}}
+ box(14.6,.1,.1,0x7a6a52,7,y+3.66,c-3.5);box(14.6,.1,.1,0x7a6a52,7,y+2.31,c+3.0);for(let t=.15;t<1;t+=.2)box(14.6,.08,.1,0x7a6a52,7,y+3.673-1.345*t,c-3.5+6.5*t);box(.4,.32,.1,0x2b2b2b,5.6,y+2.9,c-3.3);box(.32,.24,.02,0xf2f2e0,5.6,y+2.9,c-3.24,null,{emissive:0xffffcc,emissiveIntensity:.5});
+ // roof
+ {between(new T.Vector3(7,y+3.866,c-3.95),new T.Vector3(7,y+2.2,c+4.1),15.2,.07,0xb5b2a6,roofs);
+  for(let i=0;i<50;i++)between(new T.Vector3(-.3+i*.3,y+3.916,c-3.95),new T.Vector3(-.3+i*.3,y+2.25,c+4.1),.13,.04,i%2?0xa09d90:0xaeab9f,roofs);
+  }
+ // pipes, lamps, mist
+ cyl(.04,14,0xf2f2f2,7,y+2.65,c-1.4,roofs,8).rotation.z=Math.PI/2;
+ for(let x=1;x<14;x+=3){const l=box(.5,.04,.12,0xffffee,x,y+2.45,c+1.6,roofs,{emissive:0xffffcc,emissiveIntensity:.6});cyl(.02,.2,0x4488cc,x+1,y+2.5,c-1.4,roofs,4)}
+ cyl(.01,14,0x222222,7,y+2.2,c+3,null,3).rotation.z=Math.PI/2;
+ // water trough, drum, hose
+ box(2,.5,.6,0x8e8e8a,12.6,y+.3,c+2.2);box(1.8,.02,.42,0x5c7f5a,12.6,y+.56,c+2.2,null,{roughness:.2});cyl(.3,.9,0x1c4fa8,.2,y+.5,c+2.0);
+ box(.9,.03,.03,0x2a7fd8,10,y+.15,c+2.0);
+ // people & milking gear
+ worker(3+k*2,y+.1,c+1.5);if(k!=1)worker(9,y+.1,c-2.8);
+ milkcan(5+k*2,y+.1,c+1.5);box(.35,.5,.3,0x2a63b8,5.7+k*2,y+.4,c+2.1);
+ // grass bits in feed aisle
+ for(let i=0;i<6;i++)box(.6,.1,.35,0x84a040,rnd()*13+.5,y+.79,c-1.9+rnd()*.25);OX=0;MZ=0;SH=0}
+for(let k=0;k<3;k++)barn(k,-1.2*k,10*k,0,k==1);barn(1,-1.2,10,26.5);barn(2,-2.4,20,26.5);
+// jalan kecil B-C (lebar ~1,1 m, setinggi lantai B)
+box(14.4,.04,1.1,0x9b8d76,6.8,-1.13,14.75);
+for(let i=0;i<26;i++)box(.08+rnd()*.12,.05,.08+rnd()*.1,i%2?0x7d786d:0xb5ae9e,-.3+rnd()*14.2,-1.1,14.25+rnd()*1.0,null);
+// feed prep 8x6 & storage 3x2.5 (upper right)
+{OX=3.6;box(8,.1,7,0x9a9a94,19,.05,-1.3);
+[[15.2,-4.7],[22.8,-4.7],[15.2,2],[22.8,2],[19,-4.7],[19,2]].forEach(p=>cyl(.1,3.1,0x8a7a60,p[0],1.55,p[1]));
+box(8.8,.07,7.8,0xb5b2a6,19,3.15,-1.3,roofs).rotation.x=.1;for(let i=0;i<16;i++)box(.1,.05,7.8,0xa09d90,14.7+i*.55,3.2,-1.3,roofs).rotation.x=.1;
+box(2.4,1,1.8,0x7ea53a,22,.6,-3.6);box(1.6,.6,1.3,0x7ea53a,21.2,.4,-2.3);
+box(2.2,.12,1.6,0x9a7a4a,19.2,.16,-3.9);box(1.6,.5,1.2,0xc2a45e,19.6,.35,-2.5);for(let i=0;i<4;i++)goose(18.6+i*.5,.1,-1.5+(i%2)*.4);
+for(let i=0;i<8;i++)box(.7,.25,.45,0xe9e5da,18.5+(i%3)*.75,.35+Math.floor(i/3)*.26,-4.2+(i%2)*.5);
+box(1.1,.9,.8,0x2e9a37,21.5,.55,-.4);box(.6,.4,.5,0x2e9a37,21.5,1.2,-.4);
+box(.6,.3,1,0xd9a21b,17.2,.5,-.2);cyl(.18,.35,0x1c4fa8,18.4,.28,0);
+OX=0;box(3,2.5,2.5,0xa9a8a0,16.5,1.25,-1.3);box(3.02,1.1,2.52,0x96968f,16.5,.55,-1.3);box(3.5,.07,2.9,0xb5b2a6,16.5,2.65,-1.3,roofs);
+box(.06,1.9,.85,0x1b1b1b,18.03,1.0,-1.3);box(.07,.12,.95,0xcfe3ea,18.04,2.02,-1.3);box(.6,.7,.05,0x7a5a3c,16.5,1.5,-.04);box(.44,.54,.06,0xbcd6e0,16.5,1.5,-.03);OX=3.6;
+box(.3,.3,.3,0x2a63b8,20.6,.2,1.3);cyl(.3,.9,0x1c4fa8,21.4,.5,1.2);OX=0;}
+// pickup di lahan kosong kanan Kandang B
+{const G=new T.Group();
+box(5,.6,1.9,0xe6e6e2,0,.75,0,G);box(1.8,.7,1.7,0xe6e6e2,1.0,1.4,0,G);box(1.4,.4,1.72,0x2a3a4a,1.05,1.45,0,G);
+[-1,1].forEach(s=>box(2.4,.45,.06,0xd5d5d0,-1.2,1.3,s*.92,G));box(.06,.45,1.8,0xd5d5d0,-2.45,1.3,0,G);
+box(2.2,.5,1.6,0x7ea53a,-1.2,1.15,0,G);box(.3,.25,1.7,0x777777,2.5,.55,0,G);
+[[1.6,.95],[1.6,-.95],[-1.5,.95],[-1.5,-.95]].forEach(w=>{const m=new T.Mesh(new T.CylinderGeometry(.38,.38,.25,14),mat(0x1a1a1a));m.rotation.x=Math.PI/2;m.position.set(w[0],.38,w[1]);m.castShadow=true;G.add(m)});G.position.set(19.8,sy(14)+.02,14);G.rotation.set(Math.atan(.12),Math.PI/2,0);scene.add(G);
+}
+// feed prep (5x4) & storage (3x2.5) — upper right
+if(0){const y=0,c=0;box(5,.1,4,0x9a9a94,17.5,.05,-1.5);
+ [[15,-3.4],[20,-3.4],[15,.4],[20,.4]].forEach(p=>cyl(.1,2.8,0x8a7a60,p[0],1.4,p[1]));
+ const r=box(5.8,.07,4.6,0x7d8082,17.5,2.95,-1.5,roofs);r.rotation.x=-.12;
+ box(1.6,.8,1.2,0x7ea53a,16,.5,-2.6);box(1.2,.5,1,0x7ea53a,16.3,.3,-1.4);
+ box(1.4,.12,1.2,0x9a7a4a,19.2,.15,-2.8);for(let i=0;i<6;i++)box(.7,.25,.45,0xe9e5da,18.8+(i%2)*.7,.35+Math.floor(i/2)*.26,-2.8);
+ box(.9,.8,.7,0x2e9a37,17.5,.5,-.2);box(.5,.3,.4,0x2e9a37,17.5,1.1,-.2);
+ box(.6,.3,.9,0xd9a21b,16.6,.5,.2);cyl(.1,.05,0x888,16.6,.3,.7);
+ box(3,2.5,2.5,0xbdb8aa,16.6,1.25,3.4);box(3.5,.07,3,0x7d8082,16.6,2.65,3.4,roofs);
+ box(.7,1.6,.05,0x6b4a2e,15.6,.9,2.13);box(.5,.4,.05,0x3a4a5a,17.6,1.6,2.13);
+ box(.3,.3,.3,0x2a63b8,19.2,.2,3.4);cyl(.3,.9,0x1c4fa8,19.4,.5,2.1);}
+// vegetation
+function palm(x,z,y){const h=7+rnd()*4;cyl(.2,h,0x7a6040,x,y+h/2,z,null,6);for(let i=0;i<7;i++){const a=i/7*6.28;const f=box(.2,.05,3.2,0x2f7a2f,x+Math.cos(a)*1.4,y+h,z+Math.sin(a)*1.4);f.rotation.y=-a+Math.PI/2;f.rotation.x=.3}}
+function banana(x,z,y){cyl(.12,2,0x7ea53a,x,y+1,z,null,6);for(let i=0;i<5;i++){const a=i/5*6.28;const f=box(.7,.04,2.2,0x3d9a2f,x+Math.cos(a)*.9,y+2.1,z+Math.sin(a)*.9);f.rotation.y=-a+Math.PI/2;f.rotation.x=.4}}
+function shrub(x,z,y,h){box(1.2+rnd(),h,1.2+rnd(),rnd()<.5?0x4f8a35:0x6aa040,x,y+h/2,z)}
+function napier(x,z){const h=2.2+rnd()*1.5;box(.4,h,.4,rnd()<.5?0x4f8f2f:0x5fa036,x,-4+h/2,z);for(let i=0;i<1;i++){const f=box(.12,.05,2.2,0x6aa83a,x,-4+h-.15,z);f.rotation.order='YXZ';f.rotation.set(.5,rnd()*3.14,0)}}
+box(43.5,.2,15,0x6a4a2c,20.25,-3.95,41.2);for(let x=-.2;x<42;x+=1.9)for(let z=34.5;z<48.4;z+=1.9)napier(x+(rnd()-.5)*.4,z+(rnd()-.5)*.4);
+// halaman/jalan depan kandang: tanah berbatu kerikil, lurus, menyambung ke jalan akses di kiri
+{const Y=-2.4,gc=0x8b7556,X0=-5.7,X1=42,Wd=X1-X0,Cx=(X0+X1)/2;
+ box(Wd,1.6,8.2,gc,Cx,-3.2,29.1);                                      // badan tanah
+ box(Wd,.05,4.8,0x9a8462,Cx,Y+.02,29.1);                               // jalur utama lurus (tanah padat)
+ [26.6,31.6].forEach(z=>box(Wd,.04,.25,0x7a6548,Cx,Y+.02,z));           // tepi jalur lurus
+ box(3.4,.05,8.2,0x9a8462,-4,Y+.02,29.1);                              // sambungan jalan akses (x=-4) menyeberang halaman
+ // lereng tanah depan (di sisi kebun) menggantikan tembok; di x -5.7..-2 diganti jalan turun
+ {const sh=new T.Shape();sh.moveTo(33.2,Y);sh.lineTo(34.7,-3.85);sh.lineTo(33.2,-3.85);sh.closePath();
+  const gm=new T.ExtrudeGeometry(sh,{depth:44,bevelEnabled:false});gm.rotateY(-Math.PI/2);
+  const m=new T.Mesh(gm,mat(gc));m.position.x=42;m.castShadow=m.receiveShadow=true;scene.add(m)}
+ {let s=11;const lr=()=>(s=(s*16807)%2147483647)/2147483647;
+  const N=760,im=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),new T.MeshStandardMaterial({roughness:.95,flatShading:true}),N),d=new T.Object3D(),cols=[0x9c968a,0x7d786d,0xb5ae9e,0x6f6a5e,0xa8997c],c=new T.Color();
+  for(let i=0;i<N;i++){const r=.04+lr()*.08,onSlope=i>=N-80,x=onSlope?-1.9+lr()*43.6:X0+.1+lr()*(Wd-.2);
+   const z=onSlope?33.3+lr()*1.3:25.1+lr()*8,y=onSlope?Y-(z-33.2)/1.5*1.45+r*.3:Y+.05+r*.3;
+   d.position.set(x,y,z);d.rotation.set(lr()*6,lr()*6,lr()*6);d.scale.set(r*(1+lr()*.5),r*.7,r);d.updateMatrix();im.setMatrixAt(i,d.matrix);im.setColorAt(i,c.setHex(cols[i%5]))}
+  im.castShadow=true;scene.add(im)}}
+// (tembok batako samping Kandang A dihapus)
+// ===== Kompleks ujung kiri topografi: jalan kecil turun, Pedet (2 bagian), Pejantan, Sapi Kering x2 =====
+{const Rg=(()=>{let q=77;return()=>(q=(q*16807)%2147483647)/2147483647})(),V3=(x,y,z)=>new T.Vector3(x,y,z),XR=-28;
+ // bukit belakang diperpanjang ke kiri, dengan galian jalan kecil (masuk bukit dari jalan utama, belok, keluar di depan bukit)
+ box(41.7,6,14,0x5d7a35,-51.15,-1,-12);box(24.1,6,4.7,0x5d7a35,-18.25,-1,-16.65);box(19.5,6,4.7,0x5d7a35,-15.95,-1,-7.35);
+ const pad=(x0,x1,z0,z1,yt)=>box(x1-x0,yt+4,z1-z0,0x7a5a3c,(x0+x1)/2,(yt-4)/2,(z0+z1)/2);   // teras tanah
+ pad(-42,-30.3,-5,11,-2.2);pad(-54.5,-42,-5,11,-1.4);pad(-46,-30.3,11,25,-3.0);pad(-25.7,-12.2,11,25,-3.0);pad(-34,-22,25,39,-3.4);
+ // jalan kecil (tanah kerikil): cabang dari jalan akses, ke kiri lalu turun lurus
+ const track=(a,b,w)=>{const L=a.distanceTo(b),g=new T.Group();
+  const sl=new T.Mesh(new T.BoxGeometry(w+2,6,L),mat(0x6b7a3a));sl.position.y=-3;g.add(sl);
+  const rd=new T.Mesh(new T.BoxGeometry(w,.12,L),mat(0x8b7556));rd.position.y=.04;rd.receiveShadow=true;g.add(rd);
+  const N=Math.round(L*5),im=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),new T.MeshStandardMaterial({roughness:.95,flatShading:true}),N),d=new T.Object3D(),cols=[0x9c968a,0x7d786d,0xb5ae9e,0x6f6a5e,0xa8997c],c=new T.Color();
+  for(let i=0;i<N;i++){const r=.04+Rg()*.07;d.position.set((Rg()-.5)*(w-.3),.1+r*.4,(Rg()-.5)*(L-.5));d.rotation.set(Rg()*6,Rg()*6,Rg()*6);d.scale.set(r*(1+Rg()*.5),r*.7,r);d.updateMatrix();im.setMatrixAt(i,d.matrix);im.setColorAt(i,c.setHex(cols[i%5]))}
+  im.castShadow=true;g.add(im);g.position.copy(a).add(b).multiplyScalar(.5);g.lookAt(b);scene.add(g)};
+ track(V3(-5.7,.2,-12),V3(-12.5,.2,-12),2.6);track(V3(-12.5,.2,-12),V3(XR,-.95,-12),2.6);track(V3(XR,-.95,-12),V3(XR,-3.3,28.4),2.6);
+ box(2.6,.12,2.6,0x8b7556,XR,-.91,-12);box(4.6,6,4.6,0x6b7a3a,XR,-3.95,-12);   // sudut belokan (di dalam galian bukit)
+ // ---- komponen bersama ----
+ const post=(x,z,y,h)=>{cyl(.2,.5,0xb4ada0,x,y+.25,z,null,10);cyl(.1,h,0x8a7a60,x,y+.5+h/2,z,null,8)};   // tiang kayu bulat di atas pondasi beton
+ function shed(x0,x1,z0,z1,y,hi,lo){const W=x1-x0,D=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2;
+  box(W,.1,D,0x8f8c84,cx,y+.05,cz);                                          // lantai beton
+  box(W-.6,.03,D-.8,0x262626,cx,y+.115,cz);                                   // matras karet
+  for(let i=1;i<(W-.6)/.6;i++)box(.012,.005,D-.8,0x3a3a3a,x0+.3+i*.6,y+.135,cz);
+  for(let j=1;j<(D-.8)/.6;j++)box(W-.6,.005,.012,0x3a3a3a,cx,y+.135,z0+.4+j*.6);
+  const n=Math.max(2,Math.round(W/3.2));
+  for(let i=0;i<=n;i++){const x=x0+.3+i*(W-.6)/n;post(x,z0+.3,y+.1,hi-.75);post(x,z1-.3,y+.1,lo-.75);
+   between(V3(x,y+hi-.1,z0+.3),V3(x,y+lo-.1,z1-.3),.12,.12,0x7a6a52)}
+  between(V3(cx,y+hi,z0-.5),V3(cx,y+lo,z1+.5),W+1.2,.07,0xb5b2a6,roofs);     // atap asbes
+  for(let x=x0-.5;x<=x1+.5;x+=.55)between(V3(x,y+hi+.05,z0-.5),V3(x,y+lo+.05,z1+.5),.1,.04,0xa09d90,roofs)}
+ const cowF=(x,y,z,stand,fz)=>{if(fz){MZ=1;MC=z}cow(x,y,z,stand);MZ=0;MC=0};   // fz: sapi menghadap +z
+ function calf(x,y,z,col,ry){const G=new T.Group();box(.35,.4,.9,col,0,.6,0,G);box(.16,.45,.16,col,0,.85,-.5,G);box(.2,.22,.36,col,0,1.05,-.62,G);
+  if(col==0x151515)box(.3,.05,.4,0xf1f1ee,0,.82,.1,G);
+  [[-.12,-.3],[.12,-.3],[-.12,.3],[.12,.3]].forEach(l=>box(.07,.42,.07,0x555555,l[0],.21,l[1],G));
+  G.position.set(x,y,z);G.rotation.y=ry;scene.add(G)}
+ // ---- Kandang Pedet: kandang individu beton, lorong tengah ----
+ function pens(x0,n,pw,z0,pd,y,cols,dir){const W=n*pw,cx=x0+W/2,za=dir>0?z0+pd:z0,zb=dir>0?z0:z0+pd;
+  box(W,1.0,.14,0xa9a8a0,cx,y+.6,zb);box(W,.9,.14,0xa9a8a0,cx,y+.55,za);
+  for(let i=0;i<=n;i++)box(.14,1.0,pd,0xa9a8a0,x0+i*pw,y+.6,z0+pd/2);
+  for(let i=0;i<n;i++){const x=x0+i*pw+pw/2;box(pw-.3,.04,pd-.3,0xc2a45e,x,y+.12,z0+pd/2);
+   calf(x,y+.1,dir>0?z0+pd-.85:z0+.85,cols[i%cols.length],dir>0?Math.PI:0)}}
+ const cc=[0x6b3f26,0x151515,0x8a4b2a,0x151515];
+ function pedet(x0,x1,y){shed(x0,x1,1,9,y,3.3,2.4);const n=Math.floor((x1-x0-.6)/2.6),x=x0+(x1-x0-n*2.6)/2;
+  pens(x,n,2.6,6.3,2.2,y,cc.slice().reverse(),-1);
+  for(let i=0;i<6;i++)box(.5,.05,.3,0x84a040,x0+1+Rg()*(x1-x0-2),y+.14,4.4+Rg()*1.2)}
+ pedet(-42,-31,-2.2);pedet(-53,-42,-1.4);worker(-37,-2.1,5);
+ // ---- Kandang Pejantan: palung beton tinggi di tengah, sapi di dua sisi ----
+ {const y=-3.0,x0=-44,x1=-31,z0=13,z1=23,zt=18,cx=(x0+x1)/2;shed(x0,x1,z0,z1,y,3.4,2.5);
+  box(12.4,.8,.9,0x9fa09a,cx,y+.5,zt);box(12.4,.14,.1,0x9fa09a,cx,y+.97,zt-.4);box(12.4,.14,.1,0x9fa09a,cx,y+.97,zt+.4);box(12,.02,.7,0x62645f,cx,y+.92,zt);
+  for(let i=0;i<8;i++)cowF(x0+.9+i*1.5,y+.1,zt+1.35,i%4!=1,false);
+  for(let i=0;i<7;i++)cowF(x0+1.5+i*1.6,y+.1,zt-1.35,i%3!=2,true)}
+ // ---- Kandang Sapi Kering 1 & 2: dinding beton berlekuk U, sapi menghadap dinding ----
+ function kering(x0,x1,z0,z1,y){shed(x0,x1,z0,z1,y,3.3,2.4);const W=x1-x0,cx=(x0+x1)/2,zw=z0+3.8,n=Math.floor((W-.6)/1.4),xs=x0+.5;
+  box(W-.4,.6,.25,0xa6a49c,cx,y+.4,zw);
+  for(let k=0;k<=n;k++)box(.7,.5,.25,0xa6a49c,xs+.35+k*1.4,y+.95,zw);
+  box(W-.4,.45,.2,0xa6a49c,cx,y+.325,z0+1.4);
+  for(let k=0;k<n;k++)cowF(xs+1.05+k*1.4,y+.1,zw+1.15,k%4!=2,false);
+  cyl(.25,.5,0xf2f2f0,x1-1,y+.35,z1-1.2)}
+ kering(-33,-23,28,38,-3.4);   // Kering 1: di depan (ujung) jalan kecil
+ kering(-25,-15,13,23,-3.0);    // Kering 2: seberang jalan, berlawanan dengan Pejantan
+ // rumput gajah di depan teras bawah
+ for(let x=-52;x<-35.5;x+=1.9){napier(x+(Rg()-.5)*.4,26.8+(Rg()-.5)*.4);napier(x+.9+(Rg()-.5)*.4,28.8+(Rg()-.5)*.4)}
+ for(let x=-37;x<-12.5;x+=1.9){napier(x+(Rg()-.5)*.4,41+(Rg()-.5)*.4);napier(x+.9+(Rg()-.5)*.4,43+(Rg()-.5)*.4)}
+}
+
+// ===== FASILITAS BARU v14: pemerahan, pendingin susu, kandang I/J/K, isolasi (teras timur) =====
+{const V3=(x,y,z)=>new T.Vector3(x,y,z),ea=0x7a5a3c,cn=0xa9a8a0,wh=0xf2f2f0,SS=0xc9ced1,GV=0xb8bec2,Y0=-1.2;
+const earth=(x0,x1,z0,z1,yt)=>box(x1-x0,yt+4,z1-z0,ea,(x0+x1)/2,(yt-4)/2,(z0+z1)/2);
+const slab=(x0,x1,z0,z1,y,h,c,o)=>box(x1-x0,h,z1-z0,c,(x0+x1)/2,y+h/2,(z0+z1)/2,null,o);
+const road=(a,b,w)=>{const L=a.distanceTo(b),g=new T.Group(),e=new T.Mesh(new T.BoxGeometry(w+2,6,L),mat(ea));e.position.y=-3.06;g.add(e);
+ const r=new T.Mesh(new T.BoxGeometry(w,.12,L),mat(0x8b7556));r.position.y=.04;r.receiveShadow=true;g.add(r);g.position.copy(a).add(b).multiplyScalar(.5);g.lookAt(b);scene.add(g)};
+const fence=(x0,z0,x1,z1,y,h=1.2)=>{const L=Math.hypot(x1-x0,z1-z0),n=Math.max(1,Math.round(L/2));for(let i=0;i<=n;i++)cyl(.04,h,GV,x0+(x1-x0)*i/n,y+h/2,z0+(z1-z0)*i/n,null,6);
+ [.35,.7,1.05].filter(t=>t<=h).forEach(t=>between(V3(x0,y+t,z0),V3(x1,y+t,z1),.05,.05,GV))};
+const cw=(x,y,z,st,ry,sc)=>{cow(x,y,z,st);const G=scene.children[scene.children.length-1];G.rotation.y=ry||0;if(sc)G.scale.setScalar(sc)};
+// atap asbes bersih: rangka & tiang selalu di bawah permukaan atap (tidak menembus)
+const rf=(x0,x1,z0,z1,y,hi,lo,z)=>y+hi+(lo-hi)*(z-(z0-.5))/(z1-z0+1);
+const roof=(x0,x1,z0,z1,y,hi,lo,n)=>{const cx=(x0+x1)/2,W=x1-x0,f=z=>rf(x0,x1,z0,z1,y,hi,lo,z);between(V3(cx,y+hi,z0-.5),V3(cx,y+lo,z1+.5),W+1,.07,0xb5b2a6,roofs);
+ for(let x=x0-.4,i=0;x<=x1+.5;x+=.3,i++)between(V3(x,y+hi+.05,z0-.5),V3(x,y+lo+.05,z1+.5),.13,.04,i%2?0xa09d90:0xaeab9f,roofs);
+ for(let i=0;n&&i<=n;i++){const x=x0+.3+i*(W-.6)/n;[z0+.3,z1-.3].forEach(z=>{const t=f(z)-.17;cyl(.2,.4,cn,x,y+.3,z,null,10);cyl(.1,t-y-.5,0x8a7a60,x,(t+y+.5)/2,z,null,8)});
+  between(V3(x,f(z0+.3)-.12,z0+.3),V3(x,f(z1-.3)-.12,z1-.3),.12,.1,0x7a6a52)}};
+// kandang: sekat, tempat pakan keramik & tempat minum per pen
+const house=(x0,x1,z0,z1,Y,np,hi,lo,sc,st,solid)=>{const pw=(x1-x0)/np;slab(x0-.2,x1+.2,z0-2,z1+.2,Y,.1,0x8f8c84);roof(x0,x1,z0,z1,Y,hi,lo,Math.round((x1-x0)/3.2));
+ slab(x0,x1,z0+.4,z0+1.2,Y+.1,.6,0xb4ada0);slab(x0+.05,x1-.05,z0+.5,z0+1.1,Y+.7,.04,wh,{roughness:.2});slab(x0,x1,z0+.4,z0+.5,Y+.7,.14,wh);slab(x0,x1,z0+1.1,z0+1.2,Y+.7,.14,wh);
+ slab(x0,x1,z1-.1,z1+.1,Y+.1,.9,cn);cyl(.03,x1-x0,0x2a7fd8,(x0+x1)/2,Y+1.1,z1-.2).rotation.z=Math.PI/2;
+ for(let i=0;i<=np;i++){const x=x0+i*pw;slab(x-.04,x+.04,z0+.4,z0+1.2,Y+.7,.14,wh);solid?slab(x-.07,x+.07,z0+1.2,z1,Y+.1,1.8,cn):fence(x,z0+1.2,x,z1-.1,Y+.1,1.3)}
+ for(let i=0;i<np;i++){const cx=x0+(i+.5)*pw;slab(cx-.4,cx+.4,z1-.95,z1-.3,Y+.1,.45,0x8e8e8a);slab(cx-.34,cx+.34,z1-.89,z1-.36,Y+.55,.02,0x4f7fa8,{roughness:.2});cyl(.03,.3,0x2a7fd8,cx,Y+.95,z1-.2,null,6);
+  cw(cx,Y+.1,z0+2.4,st&&st[i]!==0,0,sc)}};
+// ---------- tanah, teras & jalan ----------
+earth(49,58,-5,5,Y0);earth(56.8,77,33,50,-3.4);earth(42,57,25,33.2,-2.4);
+slab(42,56.7,26.6,31.6,-2.4,.05,0x9a8462);slab(56.8,77,32.9,33.1,-3.4,1,0x8d877a);
+road(V3(54.8,-3.4,47),V3(54.8,-2.4,33),3.8);road(V3(54.8,-2.4,33),V3(54.8,-2.4,26),3.8);road(V3(54.8,-2.4,26),V3(54.8,Y0,3),3.8);
+slab(28,57.5,-5,5,Y0,.03,0x9a9a94);slab(46.9,57,.4,4.95,Y0,.06,0x9a8462);
+[[33,49,-3.35]].forEach(a=>slab(76,76.5,a[0],a[1],a[2],.06,0x9a7a2e,{roughness:.2}));
+// ---------- jalur sapi: masuk (x 28.6-30.4), ruang tunggu, keluar ----------
+const lane=(x0,x1,z0,z1)=>slab(x0,x1,z0,z1,Y0,.08,0x9a9a94);
+lane(28.6,30.4,.8,6.2);lane(28.6,33.8,-4.6,.8);lane(45.1,46.9,-4.4,3.7);lane(31.6,46.9,2,3.7);lane(31.6,33.4,3.7,6.2);
+fence(28.6,-4.6,28.6,6.2,Y0);fence(30.4,.8,30.4,6.2,Y0);fence(28.6,-4.6,34,-4.6,Y0);fence(30.4,.8,33.8,.8,Y0);fence(31.6,2,31.6,6.2,Y0);fence(33.4,3.7,33.4,6.2,Y0);
+fence(31.6,2,45.1,2,Y0);fence(33.4,3.7,46.9,3.7,Y0);fence(46.9,-4.4,46.9,3.7,Y0);
+for(let i=0;i<7;i++)cw(29.4+(i%3)*1.7,Y0+.08,-3.6+Math.floor(i/3)*1.7,i%3!=1,(i%2?.15:-.15));worker(31,Y0+.08,-.3);
+// ---------- KANDANG PEMERAHAN (milking parlor herringbone 2x4, 11 x 6,1 m) ----------
+roof(34,45,-4.6,1.4,Y0,3.7,3,3);slab(34,45,-4.7,1.5,Y0,.12,0x8f8c84);
+slab(34,45,-4.7,-4.5,Y0,2.3,0xcfc9bb);slab(34,45,1.3,1.5,Y0,1.1,0xcfc9bb);
+[34,44.9].forEach(x=>[[-4.5,-4.05],[-2.65,-.55],[.85,1.3]].forEach(s=>slab(x,x+.1,s[0],s[1],Y0,1.2,0xcfc9bb)));
+slab(34.2,44.8,-4.5,-2.3,Y0,.88,cn);slab(34.2,44.8,-.9,1.3,Y0,.88,cn);slab(34.2,44.8,-2.3,-.9,Y0,.02,0x4a4d50);
+box(.1,.35,1.2,0x2e9a37,34,Y0+2.2,-3.35);box(.1,.35,1.2,0xc8201e,45,Y0+2.2,-3.35);   // MASUK / KELUAR
+for(let i=0;i<4;i++){const x=35.4+i*2.6;cw(x,Y0+.88,-3.4,true,.55,.92);cw(x,Y0+.88,.3,true,Math.PI-.55,.92);
+ [[-2.45,-1],[-.75,1]].forEach(p=>{cyl(.07,.2,SS,x,Y0+1.45,p[0]);[-.06,.06].forEach(d=>cyl(.022,.25,0x222222,x+d,Y0+1.6,p[0]+p[1]*.05,null,5))});}
+between(V3(34.4,Y0+1.9,-4.2),V3(44.6,Y0+1.9,-4.2),.06,.06,GV);between(V3(34.4,Y0+1.9,.9),V3(44.6,Y0+1.9,.9),.06,.06,GV);
+for(let x=34.4;x<=44.6;x+=2.55){cyl(.04,1,GV,x,Y0+1.4,-4.2,null,6);cyl(.04,1,GV,x,Y0+1.4,.9,null,6)}
+cyl(.06,16.1,SS,42.55,Y0+2.3,-1.6,null,8).rotation.z=Math.PI/2;worker(39.5,Y0+.02,-1.6);box(1,.2,.4,0x8a8a8a,35,Y0+.1,-1.6);
+// ---------- RUANG PENDINGIN SUSU (tertutup) ----------
+roof(47.2,53.6,-4.6,.2,Y0,3.5,3.2,0);
+[[47.2,53.6,-4.6,-4.4],[47.2,47.4,-4.4,.2],[53.4,53.6,-4.4,.2],[47.2,53.6,.2,.4]].forEach((s,i)=>slab(s[0],s[1],s[2],s[3],Y0,i==3?1:3.1,0xd8d2c2));
+box(2.7,1.9,.06,0xbcd6e0,49.85,Y0+1.95,.3,null,{transparent:true,opacity:.35,roughness:.1});slab(47.4,48.6,.2,.4,Y0,3.1,0xd8d2c2);box(.9,2.1,.07,0x6b4a2e,48,Y0+1.05,.4);
+slab(51.2,53.4,.2,.4,Y0,3.1,0xd8d2c2);box(2.2,2.6,.08,0x9aa6ad,52.3,Y0+1.3,.45);for(let i=0;i<9;i++)box(2.2,.03,.1,0x7f8b92,52.3,Y0+.3+i*.28,.46);
+slab(47.4,53.4,-4.4,.2,Y0,.1,0xb8b4a8);
+cyl(.8,3,SS,50.6,Y0+1.15,-1.6,null,20).rotation.z=Math.PI/2;[[-1.2,-.5],[1.2,-.5],[-1.2,.5],[1.2,.5]].forEach(p=>cyl(.06,.4,0x555555,50.6+p[0],Y0+.3,-1.6+p[1]*1.4,null,6));
+box(.3,.3,.3,0x2a63b8,50.6,Y0+2.1,-1.6);cyl(.04,.4,SS,50.6,Y0+2.12,-1.6,null,6);cyl(.06,.4,SS,52.2,Y0+.7,-1.6,null,6);
+box(1.2,.8,.7,0x2f5f8f,48.5,Y0+.5,-3.8);box(.5,.8,.15,0xdedede,52.9,Y0+1.4,-4.25);box(.9,.9,.5,0x8e8e8a,52.8,Y0+.55,-3.3);
+cyl(.05,.5,SS,50.8,Y0+.9,.55,null,6).rotation.x=Math.PI/2;
+// truk tangki susu di apron
+{const G=new T.Group(),m=new T.Mesh(new T.CylinderGeometry(.85,.85,5.2,20),mat(SS));m.rotation.z=Math.PI/2;m.position.set(-1.5,1.9,0);m.castShadow=true;G.add(m);
+ box(7.4,.4,1.9,0x333333,0,.9,0,G);box(1.9,1.9,2,0x1f4f9a,3.3,1.9,0,G);box(.05,.8,1.6,0x2a3a4a,4.27,2.3,0,G);box(.5,.5,.6,0x555555,-4.1,1.6,.3,G);
+ [[3.2],[0.3],[-.8],[-2.9]].forEach(w=>[-.95,.95].forEach(s=>{const k=new T.Mesh(new T.CylinderGeometry(.45,.45,.3,14),mat(0x1a1a1a));k.rotation.x=Math.PI/2;k.position.set(w[0],.45,s);G.add(k)}));
+ G.position.set(52.6,Y0+.03,3);scene.add(G);between(V3(48.6,Y0+1.5,3.1),V3(50.8,Y0+.9,.6),.08,.08,0x222222)}
+// ---------- Kandang F (jantan), G (kering), H (afkir): tambah sekat per sapi, tempat minum per sapi, rampa muat ----------
+{const bowl=(x,z,Y)=>{box(.6,.4,.4,0x8e8e8a,x,Y+.3,z);box(.5,.02,.3,0x4f7fa8,x,Y+.52,z,null,{roughness:.2})};
+ for(let i=0;i<=8;i++)fence(-43.85+1.5*i,18.6,-43.85+1.5*i,22.4,-2.9,.9);for(let i=0;i<=7;i++)fence(-43.3+1.6*i,13.6,-43.3+1.6*i,17.4,-2.9,.9);
+ for(let i=0;i<8;i++)bowl(-43.1+1.5*i,22.1,-3);for(let i=0;i<7;i++)bowl(-42.5+1.6*i,14.2,-3);
+ for(let k=0;k<=6;k++){fence(-32.15+1.4*k,32.1,-32.15+1.4*k,35.4,-3.3,.9);fence(-24.15+1.4*k,17,-24.15+1.4*k,20.4,-2.9,.9)}
+ for(let k=0;k<6;k++){bowl(-31.45+1.4*k,35,-3.4);bowl(-23.45+1.4*k,20.9,-3)}
+ slab(-14.9,-12.5,16.4,19.6,-3,.12,0x8f8c84);fence(-14.9,16.4,-12.5,16.4,-3,1.1);fence(-14.9,19.6,-12.5,19.6,-3,1.1)}
+// ---------- KANDANG ISOLASI / KARANTINA (terpisah, di teras terendah) ----------
+{const Y=-3.4;house(60,70,37.5,44.5,Y,3,3.3,2.6,[1,1,1],[0,0,0],true);slab(56.7,59.6,38,41,Y,.04,0x9a8462);
+ [[58.4,34,58.4,38],[58.4,41,58.4,48.5],[58.4,34,75,34],[75,34,75,48.5],[58.4,48.5,75,48.5]].forEach(f=>fence(f[0],f[1],f[2],f[3],Y,1.5));
+ slab(57.8,59.8,38.5,40.5,Y,.1,0x6fb7c9,{roughness:.2});   // bak celup kaki disinfektan
+ cyl(.05,2,0x6b4a2e,58.4,Y+1,41.4,null,6);box(1.1,.7,.06,0xc8201e,58.4,Y+2.2,41.4);
+ slab(59.8,72.2,44.8,45.4,Y,.04,0x2f3234);for(let x=60.2;x<72;x+=.6)slab(x,x+.08,44.8,45.4,Y+.04,.03,0x8a8d8f);   // saluran pembuangan + grill
+ slab(72.2,74.2,44.5,46.5,Y,.5,0x8d877a);slab(72.3,74.1,44.6,46.4,Y+.5,.06,0x4a4d50);   // bak penampung limbah
+ between(V3(73.2,Y+.2,46.5),V3(73.2,Y-.3,49),.16,.16,0x2f3234)}}
+
+// labels
+const labels=[['Kandang A',7,5.3,1.6],['Kandang D',33.5,4.1,10],['Kandang E',33.5,2.9,20],['Kandang B',7,3.4,10],['Kandang C',7,2.2,20],
+ ['Area Persiapan Pakan',22.6,4.3,-1.3],['Ruang Alat & Obat',16.5,3.3,-1.3],['Kandang Pedet',-36.5,1.8,5],['Kandang Pedet',-47.5,2.6,5],['Kandang F – Sapi Jantan',-37.5,1.0,18],['Kandang G – Sapi Kering',-28,.9,33],['Kandang H – Sapi Afkir',-20,1.0,18]];
+labels.push(['Kandang Pemerahan (Milking Parlor)',39.5,3.3,-1.6],['Ruang Pendingin Susu (Milk Cooling Tank)',50.4,3.0,-2.2],['Truk Pengangkut Susu',52.6,.5,3],['Jalur Masuk Sapi',29.5,-.2,4],['Jalur Keluar Sapi',39,-.2,2.9],['Ruang Tunggu Sapi',31.2,-.3,-2.5],['Jalan Angkut Susu',54.8,-1.4,13],
+ ['Rampa Muat Sapi Afkir',-13.7,-2.4,18],['Kandang Isolasi / Karantina',65,.2,41],['Saluran Pembuangan Isolasi',66,-3,45.1],['Bak Penampung Limbah',73.2,-2.7,45.5],['Footbath Disinfektan',58.8,-3.1,39.5]);
+const lbEls=labels.map(l=>{const d=document.createElement('div');d.className='lb';d.textContent=l[0];document.body.appendChild(d);return{d,p:new T.Vector3(l[1],l[2],l[3])}});
+let showLb=true;
+
+// views
+const clip=new T.Plane(new T.Vector3(-1,0,0),7);
+const V={
+ iso:[[-12,24,60],[22,-1.5,10]],top:[[22,90,10.5],[22,0,10]],side:[[-55,2,10],[10,-1.2,10]],
+ front:[[7,1,48],[7,-1,10]],human:[[.5,-.3,11.6],[13,-.1,11.6]],outer:[[58,4,30],[24,-2,22]],section:[[40,3,12],[7,-1.2,10]],kiri:[[-2,24,62],[-34,-2,14]],baru:[[96,24,62],[62,-2,20]],perah:[[60,11,17],[44,-1,-1]],isol:[[84,8,58],[64,-3,40]]};
+function go(n){const v=n==='top'?[[-5,Math.max(100,80/cam.aspect),10.5],[-5,0,10]]:V[n];document.body.classList.toggle('topv',n==='top');veg.visible=n!=='top';scene.fog.near=n==='top'?500:90;scene.fog.far=n==='top'?900:230;cam.position.set(...v[0]);ctl.target.set(...v[1]);ctl.update();
+ const s=n==='section';renderer.clippingPlanes=s?[clip]:[];}
+const ui=document.getElementById('ui');
+[['Isometrik','iso'],['Atas','top'],['Kandang Kiri','kiri'],['Fasilitas Baru','baru'],['Pemerahan & Pendingin','perah'],['Isolasi','isol']].forEach(a=>{const b=document.createElement('button');b.textContent=a[0];b.onclick=()=>go(a[1]);ui.appendChild(b)});
+const tg=(t,f)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{b.classList.toggle('off');f(!b.classList.contains('off'))};ui.appendChild(b)};
+tg('Atap',v=>roofs.visible=v);tg('Label',v=>{showLb=v;lbEls.forEach(l=>l.d.style.display=v?'':'none')});
+go('iso');
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const v3=new T.Vector3();
+(function loop(){requestAnimationFrame(loop);ctl.update();renderer.render(scene,cam);
+ if(showLb){const vis=[];lbEls.forEach(l=>{v3.copy(l.p).project(cam);const ok=v3.z<1&&v3.z>-1;l.d.style.display=ok?'':'none';if(ok){l.x=(v3.x*.5+.5)*innerWidth;l.y=(-v3.y*.5+.5)*innerHeight;vis.push(l)}});
+ vis.sort((a,b)=>b.y-a.y);const pl=[];
+ vis.forEach(l=>{const w=l.d.offsetWidth,h=l.d.offsetHeight+3;for(let n=0,mv=true;mv&&n<12;n++){mv=false;for(const q of pl)if(Math.abs(l.x-q.x)<(w+q.w)/2&&Math.abs(l.y-q.y)<h){l.y=q.y-h;mv=true}}
+ pl.push({x:l.x,y:l.y,w});l.d.style.transform=`translate(-50%,-100%) translate(${l.x}px,${l.y}px)`})}
+})();
+</script></body></html>
